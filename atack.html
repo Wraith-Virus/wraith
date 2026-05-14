@@ -2,160 +2,266 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <title>WRAITH | ATTACK TERMINAL</title>
+    <title>WRAITH | SİSTEMƏ HÜCUM</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        :root { --green: #00ff66; --red: #ff0033; }
-        body {
-            background-color: #000;
-            color: var(--green);
-            font-family: 'Share Tech Mono', monospace;
-            margin: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+        :root { --green: #00ff66; --red: #ff0033; --bg: #000; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; }
+        body { background: var(--bg); color: var(--green); overflow: hidden; height: 100vh; }
 
-        /* HEADER */
-        header {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--green);
-            background: rgba(0, 10, 0, 0.9);
+        /* UI Elementləri */
+        header { 
+            display: flex; justify-content: space-between; padding: 15px 30px; 
+            border-bottom: 1px solid var(--green); background: rgba(0,20,0,0.8);
         }
+        .vax-container { color: var(--green); font-size: 20px; }
 
-        /* MAP AREA - Xəritənin kənara çıxmaması üçün overflow:hidden */
-        .map-container {
-            position: relative;
-            flex-grow: 1;
-            margin: 20px;
+        /* Xəritə Sahəsi */
+        .map-wrapper {
+            position: relative; margin: 20px; flex-grow: 1;
+            height: calc(100vh - 300px);
             border: 1px solid rgba(0, 255, 102, 0.2);
-            background: url('map-az.png') no-repeat center; /* Dünya xəritəsi şəkli */
+            background: url('map.png') no-repeat center;
             background-size: contain;
-            overflow: hidden; /* Xətlərin kənara çıxmasının qarşısını alır */
+            overflow: hidden; /* Xətlər çölə çıxmasın */
+            cursor: crosshair;
         }
-
-        #svg-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Xəritədəki nöqtələr */
+        #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
         .node {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            background: var(--red);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--red);
+            position: absolute; width: 6px; height: 6px; border-radius: 50%;
+            transition: background 1s, box-shadow 1s; z-index: 5;
         }
+        .node.green { background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .node.red { background: var(--red); box-shadow: 0 0 10px var(--red); }
 
-        /* TERMINAL VƏ BUTON */
-        .bottom-ui {
-            height: 200px;
-            display: flex;
-            border-top: 1px solid var(--green);
-            background: #050505;
+        /* Hədəf Halqası */
+        #target-ring {
+            position: absolute; width: 50px; height: 50px;
+            border: 2px solid var(--red); border-radius: 50%;
+            display: none; transform: translate(-50%, -50%);
+            animation: pulse 1s infinite; pointer-events: none;
         }
-        .terminal { flex: 2; padding: 15px; font-size: 12px; overflow-y: auto; border-right: 1px solid var(--green); }
-        .controls { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        .btn-start {
-            background: var(--red);
-            color: white;
-            border: none;
-            padding: 20px 50px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 0 20px var(--red);
-            font-family: 'Share Tech Mono';
+        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } }
+
+        /* Popuplar */
+        .modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95); border: 2px solid var(--green);
+            padding: 30px; z-index: 100; text-align: center; display: none;
+            box-shadow: 0 0 50px rgba(0, 255, 102, 0.3);
         }
-        .btn-start:active { transform: scale(0.95); }
+        .modal.error { border-color: var(--red); color: var(--red); }
+        input { background: transparent; border: 1px solid var(--green); color: white; padding: 10px; margin: 10px 0; text-align: center; font-size: 18px; outline: none; }
+
+        /* Alt Panel */
+        .bottom-panel {
+            height: 180px; border-top: 1px solid var(--green);
+            display: flex; background: #050505;
+        }
+        .terminal { flex: 2; padding: 15px; font-size: 13px; overflow-y: auto; color: var(--green); border-right: 1px solid var(--green); }
+        .controls { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         
-        .back-link { color: var(--green); text-decoration: none; position: absolute; top: 70px; left: 20px; border: 1px solid var(--green); padding: 5px 10px; }
+        button {
+            padding: 15px 30px; font-size: 18px; cursor: pointer; border: none; font-family: 'Share Tech Mono'; transition: 0.3s;
+        }
+        .btn-main { background: var(--red); color: white; box-shadow: 0 0 15px var(--red); }
+        .btn-sign { background: var(--green); color: black; display: none; }
+        .btn-main:disabled { background: #333; box-shadow: none; cursor: not-allowed; }
+
+        /* Strobe animasiyası (Yanıb-sönən xətlər) */
+        @keyframes strobe { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
+        .strobe-line { animation: strobe 0.2s infinite; }
     </style>
 </head>
 <body>
 
     <header>
         <div>[ SİSTEM: AKTİV ] [ MƏNBƏ: GLOBAL ]</div>
-        <div style="color: var(--red);">HƏDƏF KİLİDLƏNDİ: 40.4093° N, 49.8671° E</div>
-        <div id="clock">00:00:00</div>
+        <div class="vax-container" id="clock">00:00:00</div>
     </header>
 
-    <a href="index.html" class="back-link"><< GERİ QAYIT</a>
-
-    <div class="map-container" id="map">
+    <div class="map-wrapper" id="map" onclick="handleMapClick(event)">
         <svg id="svg-layer"></svg>
+        <div id="target-ring"></div>
+        <!-- Nöqtələr bura əlavə olunacaq -->
     </div>
 
-    <div class="bottom-ui">
-        <div class="terminal" id="logs">> Sistemin başladılması gözlənilir...</div>
+    <div class="bottom-panel">
+        <div class="terminal" id="term-out">> Xəritədən hədəf nöqtəni seçin...</div>
         <div class="controls">
-            <button class="btn-start" onclick="startAttack()">SALDIRIYI BAŞLAT</button>
-            <h2 id="timer" style="margin-top: 10px;">00:05:00</h2>
+            <button id="main-btn" class="btn-main" onclick="startProcess()" disabled>SALDIRIYI BAŞLAT</button>
+            <button id="sign-btn" class="btn-sign" onclick="drawSignature()">İMZA AT (🇦🇿)</button>
+            <div id="timer-label" style="color: var(--red); font-weight: bold;"></div>
         </div>
     </div>
 
+    <!-- Onay Kodu Modalı -->
+    <div id="auth-modal" class="modal">
+        <h3>TƏHLÜKƏSİZLİK TƏSDİQİ</h3>
+        <p>ONAY KODUNU DAXİL EDİN:</p>
+        <p style="color: var(--red); font-size: 24px;" id="auth-timer">30</p>
+        <input type="text" id="auth-input" placeholder="****" maxlength="4">
+        <p id="attempts-label">Qalan haqq: 2</p>
+        <button class="btn-main" onclick="checkCode()" style="background: var(--green); color: black;">TƏSDİQLƏ</button>
+    </div>
+
+    <!-- Hazırlanır Modalı -->
+    <div id="prep-modal" class="modal">
+        <h2 style="letter-spacing: 5px;">SALDIRI HAZIRLANIR...</h2>
+        <div style="margin-top: 20px;">[||||||||||----] 80%</div>
+    </div>
+
+    <!-- Son Atack Modalı -->
+    <div id="final-modal" class="modal">
+        <h1 style="color: var(--red); font-size: 50px;">ATTACK?</h1>
+        <button class="btn-main" onclick="executeFinalAttack()">HƏ, BAŞLAT!</button>
+    </div>
+
     <script>
-        // Saat funksiyası
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-        }, 1000);
+        let selectedX, selectedY;
+        let attempts = 2;
+        let timerInterval;
+        let attackActive = false;
+        const correctCode = "2026"; // Onay kodu
 
-        const svg = document.getElementById('svg-layer');
-        const logs = document.getElementById('logs');
-        const targetX = 63; // Hədəfin X koordinatı (%)
-        const targetY = 45; // Hədəfin Y koordinatı (%)
+        // Saat
+        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
 
-        function addLog(msg, color = "#00ff66") {
-            logs.innerHTML += `<div style="color: ${color}">> ${msg}</div>`;
-            logs.scrollTop = logs.scrollHeight;
+        // Yaşıl nöqtələri (adamlarımızı) yarat
+        const map = document.getElementById('map');
+        const nodes = [];
+        for(let i=0; i<40; i++) {
+            const n = document.createElement('div');
+            n.className = 'node green';
+            const x = Math.random() * 90 + 5;
+            const y = Math.random() * 85 + 5;
+            n.style.left = x + "%";
+            n.style.top = y + "%";
+            map.appendChild(n);
+            nodes.push({el: n, x, y});
         }
 
-        function startAttack() {
-            addLog("Şəbəkə sızması başladıldı...", "#ff0033");
+        // 1. Xəritədə yer seçmək
+        function handleMapClick(e) {
+            if(attackActive) return;
+            const rect = map.getBoundingClientRect();
+            selectedX = ((e.clientX - rect.left) / rect.width) * 100;
+            selectedY = ((e.clientY - rect.top) / rect.height) * 100;
+
+            const ring = document.getElementById('target-ring');
+            ring.style.display = 'block';
+            ring.style.left = selectedX + "%";
+            ring.style.top = selectedY + "%";
+
+            document.getElementById('main-btn').disabled = false;
+            addLog(`Hədəf seçildi: ${selectedX.toFixed(2)} / ${selectedY.toFixed(2)}`);
+        }
+
+        // 2. Saldırıyı Başlat basanda onay kodu
+        function startProcess() {
+            if(attackActive) { stopAttack(); return; }
             
-            for(let i=0; i < 30; i++) {
-                setTimeout(() => {
-                    // Təsadüfi başlanğıc nöqtələri (Xəritə daxilində)
-                    let startX = Math.random() * 100;
-                    let startY = Math.random() * 100;
+            document.getElementById('auth-modal').style.display = 'block';
+            let timeLeft = 30;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('auth-timer').innerText = timeLeft;
+                if(timeLeft <= 0) window.location.href = "index.html";
+            }, 1000);
+        }
 
-                    // Nöqtəni yarat
-                    let node = document.createElement('div');
-                    node.className = 'node';
-                    node.style.left = startX + "%";
-                    node.style.top = startY + "%";
-                    document.getElementById('map').appendChild(node);
-
-                    // Xətti (oxu) yarat
-                    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", startX + "%");
-                    line.setAttribute("y1", startY + "%");
-                    line.setAttribute("x2", startX + "%"); // Başlanğıcda eyni yerdə
-                    line.setAttribute("y2", startY + "%");
-                    line.setAttribute("stroke", "#ff0033");
-                    line.setAttribute("stroke-width", "1.5");
-                    line.setAttribute("opacity", "0.6");
-                    
-                    svg.appendChild(line);
-
-                    // Animasiya: Nöqtədən hədəfə doğru xətt uzansın
-                    setTimeout(() => {
-                        line.setAttribute("x2", targetX + "%");
-                        line.setAttribute("y2", targetY + "%");
-                        line.style.transition = "all 2s ease-out";
-                    }, 100);
-
-                    addLog(`Bağlantı quruldu: NODE_${i+100} -> HƏDƏF`, "#00ff66");
-                }, i * 200);
+        function checkCode() {
+            const val = document.getElementById('auth-input').value;
+            if(val === correctCode) {
+                clearInterval(timerInterval);
+                document.getElementById('auth-modal').style.display = 'none';
+                showPreparation();
+            } else {
+                attempts--;
+                if(attempts < 0) window.location.href = "index.html";
+                document.getElementById('attempts-label').innerText = `Qalan haqq: ${attempts + 1}`;
+                document.getElementById('auth-input').value = "";
             }
+        }
+
+        // 3. Hazırlanır Popupu
+        function showPreparation() {
+            document.getElementById('prep-modal').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('prep-modal').style.display = 'none';
+                // Nöqtələri qırmızı elə
+                nodes.forEach(n => {
+                    n.el.classList.remove('green');
+                    n.el.classList.add('red');
+                });
+                document.getElementById('final-modal').style.display = 'block';
+            }, 3000);
+        }
+
+        // 4. Əsas Hücum (Xətlərin yanması)
+        function executeFinalAttack() {
+            document.getElementById('final-modal').style.display = 'none';
+            attackActive = true;
+            document.getElementById('main-btn').innerText = "SALDIRIYI DURDUR";
+            document.getElementById('sign-btn').style.display = 'block';
+            
+            const svg = document.getElementById('svg-layer');
+            nodes.forEach((n, i) => {
+                setTimeout(() => {
+                    if(!attackActive) return;
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", n.x + "%");
+                    line.setAttribute("y1", n.y + "%");
+                    line.setAttribute("x2", selectedX + "%");
+                    line.setAttribute("y2", selectedY + "%");
+                    line.setAttribute("stroke", "#ff0033");
+                    line.setAttribute("stroke-width", "1");
+                    line.classList.add('strobe-line');
+                    svg.appendChild(line);
+                }, i * 50);
+            });
+            addLog("KRİTİK: Hücum dalğası göndərilir...", "#ff0033");
+        }
+
+        function stopAttack() {
+            attackActive = false;
+            document.getElementById('svg-layer').innerHTML = "";
+            document.getElementById('main-btn').innerText = "SALDIRIYI BAŞLAT";
+            document.getElementById('main-btn').disabled = true;
+            document.getElementById('target-ring').style.display = 'none';
+            addLog("Hücum dayandırıldı. Enerji azaldılır.");
+            
+            // Nöqtələri yavaşca yaşıl elə
+            nodes.forEach(n => {
+                n.el.classList.remove('red');
+                n.el.classList.add('green');
+            });
+        }
+
+        // 5. İmza At (Ay Ulduz)
+        function drawSignature() {
+            const svg = document.getElementById('svg-layer');
+            svg.innerHTML = ""; // Köhnə xətləri sil
+            
+            // Ay-Ulduz koordinatları (Xəritənin mərkəzinə yaxın)
+            addLog("SİSTEM İMZASI ATILIR: AY-ULDUZ...", "#00ff66");
+            
+            const centerX = 50, centerY = 40;
+            // Ay və Ulduz üçün xüsusi SVG elementləri bura yazıla bilər, 
+            // lakin biz "xətlərlə çəkilmiş" effekt veririk.
+            const signatureHTML = `
+                <circle cx="45%" cy="40%" r="40" stroke="#00ff66" fill="none" stroke-width="2" />
+                <circle cx="48%" cy="40%" r="35" stroke="black" fill="black" />
+                <path d="M 52% 35% L 54% 40% L 59% 40% L 55% 43% L 56% 48% L 52% 45% L 48% 48% L 49% 43% L 45% 40% L 50% 40% Z" fill="#00ff66" />
+            `;
+            svg.innerHTML = signatureHTML;
+        }
+
+        function addLog(msg, color = "#00ff66") {
+            const out = document.getElementById('term-out');
+            out.innerHTML += `<div style="color: ${color}">> ${msg}</div>`;
+            out.scrollTop = out.scrollHeight;
         }
     </script>
 </body>
