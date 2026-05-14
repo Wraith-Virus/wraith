@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <title>WRAITH | ATTACK TERMINAL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        :root { --green: #00ff66; --red: #ff0033; }
+        body {
+            background-color: #000;
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--green);
+            background: rgba(0, 10, 0, 0.9);
+        }
+
+        /* MAP AREA - Xəritənin kənara çıxmaması üçün overflow:hidden */
+        .map-container {
+            position: relative;
+            flex-grow: 1;
+            margin: 20px;
+            border: 1px solid rgba(0, 255, 102, 0.2);
+            background: url('map.png') no-repeat center; /* Dünya xəritəsi şəkli */
+            background-size: contain;
+            overflow: hidden; /* Xətlərin kənara çıxmasının qarşısını alır */
+        }
+
+        #svg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Xəritədəki nöqtələr */
+        .node {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: var(--red);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--red);
+        }
+
+        /* TERMINAL VƏ BUTON */
+        .bottom-ui {
+            height: 200px;
+            display: flex;
+            border-top: 1px solid var(--green);
+            background: #050505;
+        }
+        .terminal { flex: 2; padding: 15px; font-size: 12px; overflow-y: auto; border-right: 1px solid var(--green); }
+        .controls { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .btn-start {
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px var(--red);
+            font-family: 'Share Tech Mono';
+        }
+        .btn-start:active { transform: scale(0.95); }
+        
+        .back-link { color: var(--green); text-decoration: none; position: absolute; top: 70px; left: 20px; border: 1px solid var(--green); padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>[ SİSTEM: AKTİV ] [ MƏNBƏ: GLOBAL ]</div>
+        <div style="color: var(--red);">HƏDƏF KİLİDLƏNDİ: 40.4093° N, 49.8671° E</div>
+        <div id="clock">00:00:00</div>
+    </header>
+
+    <a href="index.html" class="back-link"><< GERİ QAYIT</a>
+
+    <div class="map-container" id="map">
+        <svg id="svg-layer"></svg>
+    </div>
+
+    <div class="bottom-ui">
+        <div class="terminal" id="logs">> Sistemin başladılması gözlənilir...</div>
+        <div class="controls">
+            <button class="btn-start" onclick="startAttack()">SALDIRIYI BAŞLAT</button>
+            <h2 id="timer" style="margin-top: 10px;">00:05:00</h2>
+        </div>
+    </div>
+
+    <script>
+        // Saat funksiyası
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+
+        const svg = document.getElementById('svg-layer');
+        const logs = document.getElementById('logs');
+        const targetX = 63; // Hədəfin X koordinatı (%)
+        const targetY = 45; // Hədəfin Y koordinatı (%)
+
+        function addLog(msg, color = "#00ff66") {
+            logs.innerHTML += `<div style="color: ${color}">> ${msg}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function startAttack() {
+            addLog("Şəbəkə sızması başladıldı...", "#ff0033");
+            
+            for(let i=0; i < 30; i++) {
+                setTimeout(() => {
+                    // Təsadüfi başlanğıc nöqtələri (Xəritə daxilində)
+                    let startX = Math.random() * 100;
+                    let startY = Math.random() * 100;
+
+                    // Nöqtəni yarat
+                    let node = document.createElement('div');
+                    node.className = 'node';
+                    node.style.left = startX + "%";
+                    node.style.top = startY + "%";
+                    document.getElementById('map').appendChild(node);
+
+                    // Xətti (oxu) yarat
+                    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", startX + "%");
+                    line.setAttribute("y1", startY + "%");
+                    line.setAttribute("x2", startX + "%"); // Başlanğıcda eyni yerdə
+                    line.setAttribute("y2", startY + "%");
+                    line.setAttribute("stroke", "#ff0033");
+                    line.setAttribute("stroke-width", "1.5");
+                    line.setAttribute("opacity", "0.6");
+                    
+                    svg.appendChild(line);
+
+                    // Animasiya: Nöqtədən hədəfə doğru xətt uzansın
+                    setTimeout(() => {
+                        line.setAttribute("x2", targetX + "%");
+                        line.setAttribute("y2", targetY + "%");
+                        line.style.transition = "all 2s ease-out";
+                    }, 100);
+
+                    addLog(`Bağlantı quruldu: NODE_${i+100} -> HƏDƏF`, "#00ff66");
+                }, i * 200);
+            }
+        }
+    </script>
+</body>
+</html>
