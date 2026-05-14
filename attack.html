@@ -2,87 +2,62 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <title>WRAITH | PROFESİONAL HÜCUM PANELİ</title>
+    <title>WRAITH | NEON MAP SYSTEM</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        :root { --green: #00ff66; --red: #ff0033; --bg: #000; }
+        :root { --green: #00ff66; --red: #ff0033; --blue: #00aaff; --white: #ffffff; --bg: #000; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; }
         body { background: var(--bg); color: var(--green); overflow: hidden; height: 100vh; }
 
-        header { 
-            display: flex; justify-content: space-between; padding: 10px 30px; 
-            border-bottom: 1px solid var(--green); background: rgba(0,20,0,0.8);
-            z-index: 10; position: relative;
-        }
-
+        /* XƏRİTƏ FONU BURADADIR */
         .map-wrapper {
-            position: relative; 
-            width: 96%; height: 72vh;
-            margin: 15px auto;
-            border: 1px solid rgba(0, 255, 102, 0.3);
-            background: url('map-az.png') no-repeat center;
-            background-size: contain;
-            overflow: hidden; 
-            cursor: default; /* Əvvəlcə kursor normal qalır */
+            position: relative; width: 95%; height: 75vh; margin: 10px auto;
+            border: 1px solid rgba(0, 255, 102, 0.2);
+            overflow: hidden;
+            /* Əgər faylın varsa 'map-az.png' yaz, yoxdursa bu kiber-tor fonu işləyəcək */
+            background: radial-gradient(circle at center, rgba(0,255,102,0.05) 0%, transparent 70%),
+                        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 100%, 100% 2px, 3px 100%;
             box-shadow: inset 0 0 50px #000;
         }
-        
-        /* Seçim aktiv olandan sonra kursor dəyişir */
-        .map-wrapper.selecting { cursor: crosshair; border-color: var(--red); }
 
-        #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
-        
+        /* Nöqtələr */
         .node {
-            position: absolute; width: 5px; height: 5px; border-radius: 50%;
-            transition: background 1s, box-shadow 1s, opacity 0.5s; z-index: 6;
+            position: absolute; width: 3px; height: 3px; border-radius: 50%;
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1); z-index: 6; opacity: 0;
         }
-        .node.green { background: var(--green); box-shadow: 0 0 10px var(--green); }
-        .node.red { background: var(--red); box-shadow: 0 0 10px var(--red); }
+        .neon-green { background: var(--green); box-shadow: 0 0 8px var(--green); opacity: 1; animation: slowBlink 3s infinite; }
+        .neon-red { background: var(--red); box-shadow: 0 0 8px var(--red); opacity: 1; }
+        .neon-blue { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+        .neon-white { background: var(--white); box-shadow: 0 0 10px var(--white); }
 
-        @keyframes softPulse {
-            0%, 100% { opacity: 0.2; stroke-width: 1; }
-            50% { opacity: 1; stroke-width: 1.5; }
-        }
-        .attack-line { animation: softPulse 3s ease-in-out infinite; }
+        @keyframes slowBlink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
+        /* Hədəf Halqası */
         #target-ring {
-            position: absolute; width: 40px; height: 40px;
-            border: 2px solid var(--red); border-radius: 50%;
-            display: none; transform: translate(-50%, -50%);
-            animation: ringPulse 1s infinite; pointer-events: none; z-index: 7;
+            position: absolute; width: 60px; height: 60px; border: 2px solid var(--red);
+            border-radius: 50%; box-shadow: 0 0 15px var(--red); display: none;
+            transform: translate(-50%, -50%); z-index: 10; animation: targetPulse 1s infinite;
         }
-        @keyframes ringPulse { 0% { scale: 0.8; opacity: 1; } 100% { scale: 1.8; opacity: 0; } }
+        @keyframes targetPulse { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; } }
 
-        .modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.98); border: 1px solid var(--green);
-            padding: 30px; z-index: 1000; text-align: center; display: none;
-            min-width: 350px; box-shadow: 0 0 100px rgba(0, 255, 102, 0.2);
-        }
-        input { background: transparent; border: 1px solid var(--green); color: white; padding: 10px; margin: 15px 0; text-align: center; font-size: 24px; outline: none; width: 150px; }
+        #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .attack-line { stroke: var(--red); stroke-width: 1; opacity: 0; }
+        @keyframes chaosLine { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.6; } }
 
-        .bottom-panel {
-            position: fixed; bottom: 0; width: 100%; height: 160px; 
-            border-top: 1px solid var(--green); display: flex; background: #020202;
-        }
-        .terminal { flex: 2; padding: 15px; font-size: 13px; overflow-y: auto; color: var(--green); border-right: 1px solid var(--green); }
+        /* Panellər */
+        .bottom-panel { position: fixed; bottom: 0; width: 100%; height: 130px; border-top: 1px solid var(--green); display: flex; background: #000; }
+        .terminal { flex: 2; padding: 15px; font-size: 12px; overflow-y: auto; color: var(--green); border-right: 1px solid var(--green); }
         .controls { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         
-        button { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; transition: 0.3s; font-weight: bold; }
-        .btn-target { background: #ffaa00; color: black; box-shadow: 0 0 10px #ffaa00; }
-        .btn-main { background: var(--red); color: white; box-shadow: 0 0 15px var(--red); }
-        .btn-sign { background: var(--green); color: black; }
-        button:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
+        button { padding: 10px 20px; cursor: pointer; border: 1px solid var(--green); background: transparent; color: var(--green); font-family: 'Share Tech Mono'; font-weight: bold; transition: 0.3s; }
+        button:hover { background: var(--green); color: #000; box-shadow: 0 0 15px var(--green); }
 
-        #signature-layer { transition: opacity 2s; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 2000; justify-content: center; align-items: center; color: var(--red); font-size: 50px; }
     </style>
 </head>
 <body>
-
-    <header>
-        <div>[ SİSTEM: AKTİV ] [ HUB: GLOBAL_NODE ]</div>
-        <div id="clock">00:00:00</div>
-    </header>
 
     <div class="map-wrapper" id="map" onclick="handleMapClick(event)">
         <svg id="svg-layer"></svg>
@@ -90,203 +65,165 @@
     </div>
 
     <div class="bottom-panel">
-        <div class="terminal" id="term-out">> Sistem hazır. Hücum üçün əvvəlcə hədəf seçin...</div>
-        <div class="controls">
-            <!-- Əsas Düymə: Statusa görə funksiyası dəyişəcək -->
-            <button id="main-btn" class="btn-target" onclick="btnController()">HƏDƏF SEÇ</button>
-            <button id="sign-btn" class="btn-sign" onclick="handleSignature()" style="display:none;">İMZA AT (🇦🇿)</button>
+        <div class="terminal" id="term-out">> SİSTEM HAZIRDIR. HƏDƏF GÖZLƏNİLİR...</div>
+        <div class="controls" id="ctrl-box">
+            <button onclick="enableSelection()">HƏDƏF SEÇ</button>
         </div>
     </div>
 
-    <!-- Modallar (Kod: 2268) -->
-    <div id="auth-modal" class="modal">
-        <h3>TƏHLÜKƏSİZLİK KODU</h3>
-        <p style="color: var(--red); font-size: 25px; margin: 10px 0;" id="auth-timer">30</p>
-        <input type="text" id="auth-input" placeholder="****" maxlength="4" autocomplete="off">
-        <p id="attempts-label">Qalan haqq: 2</p>
-        <button onclick="checkCode()" style="background:var(--green); color:black; padding:10px 20px; margin-top:10px;">TƏSDİQLƏ</button>
-    </div>
-
-    <div id="prep-modal" class="modal">
-        <h2>SİNYAL GÜCLƏNDİRİLİR...</h2>
-        <div style="margin-top:20px; font-size:14px;">[####################] 100%</div>
-    </div>
-
-    <div id="final-modal" class="modal">
-        <h1 style="color: var(--red); font-size: 45px; margin-bottom: 20px;">HÜCUMU TƏSDİQLƏ?</h1>
-        <button class="btn-main" onclick="executeFinalAttack()">İCRA ET</button>
+    <div id="shutdown-screen" class="overlay">
+        <div id="count-num">3</div>
     </div>
 
     <script>
-        let selectedX, selectedY;
-        let attempts = 2;
-        let timerInterval;
-        let attackActive = false;
-        let selectionEnabled = false; // Xəritə klikləmə icazəsi
-        let targetLocked = false;    // Hədəf seçilibmi?
-        const correctCode = "2268";
-
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
-
+        let nodes = [];
+        let isSelecting = false;
+        let targetPos = { x: 0, y: 0 };
         const map = document.getElementById('map');
-        const mainBtn = document.getElementById('main-btn');
-        const nodes = [];
+        const svg = document.getElementById('svg-layer');
 
-        for(let i=0; i<40; i++) {
-            const n = document.createElement('div');
-            n.className = 'node green';
-            const x = Math.random() * 70 + 15;
-            const y = Math.random() * 60 + 20;
-            n.style.left = x + "%";
-            n.style.top = y + "%";
-            map.appendChild(n);
-            nodes.push({el: n, x, y});
-        }
-
-        // Düymənin nə edəcəyinə qərar verən idarəedici
-        function btnController() {
-            if (!selectionEnabled && !targetLocked) {
-                // Mərhələ 1: Seçimi aktiv et
-                enableSelection();
-            } else if (targetLocked && !attackActive) {
-                // Mərhələ 2: Hücum prosesini başlat
-                startProcess();
-            } else if (attackActive) {
-                // Mərhələ 3: Lazım gələrsə dayandır
-                stopAttack();
+        // Başlanğıc nöqtələr
+        function createNodes(count, type) {
+            for(let i=0; i<count; i++) {
+                const n = document.createElement('div');
+                n.className = `node ${type}`;
+                n.style.left = Math.random() * 100 + "%";
+                n.style.top = Math.random() * 100 + "%";
+                map.appendChild(n);
+                nodes.push(n);
             }
         }
+        createNodes(60, 'neon-green');
 
         function enableSelection() {
-            selectionEnabled = true;
-            map.classList.add('selecting');
-            mainBtn.innerText = "HƏDƏF GÖZLƏNİLİR...";
-            mainBtn.disabled = true;
-            addLog("Hədəf seçim rejimi aktivdir. Xəritədə bir nöqtəyə klikləyin.");
+            isSelecting = true;
+            map.style.cursor = "crosshair";
+            addLog("Hədəf seçimi aktivdir...");
         }
 
         function handleMapClick(e) {
-            if (!selectionEnabled || attackActive) return;
-
+            if(!isSelecting) return;
             const rect = map.getBoundingClientRect();
-            selectedX = ((e.clientX - rect.left) / rect.width) * 100;
-            selectedY = ((e.clientY - rect.top) / rect.height) * 100;
-
-            const ring = document.getElementById('target-ring');
-            ring.style.display = 'block';
-            ring.style.left = selectedX + "%";
-            ring.style.top = selectedY + "%";
-
-            targetLocked = true;
-            selectionEnabled = false;
-            map.classList.remove('selecting');
-
-            // Düyməni hücum rejiminə keçir
-            mainBtn.disabled = false;
-            mainBtn.innerText = "SALDIRI ET";
-            mainBtn.className = "btn-main";
+            targetPos.x = ((e.clientX - rect.left) / rect.width) * 100;
+            targetPos.y = ((e.clientY - rect.top) / rect.height) * 100;
             
-            addLog(`Hədəf kilidləndi: ${selectedX.toFixed(1)} / ${selectedY.toFixed(1)}`);
+            const ring = document.getElementById('target-ring');
+            ring.style.display = "block";
+            ring.style.left = targetPos.x + "%";
+            ring.style.top = targetPos.y + "%";
+            
+            isSelecting = false;
+            map.style.cursor = "default";
+            document.getElementById('ctrl-box').innerHTML = `<button onclick="prepareAttack()">HAZIRLA</button>`;
+            addLog("Hədəf kilidləndi.");
         }
 
-        function startProcess() {
-            document.getElementById('auth-modal').style.display = 'block';
-            let timeLeft = 30;
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('auth-timer').innerText = timeLeft;
-                if(timeLeft <= 0) window.location.href = "index.html";
+        async function prepareAttack() {
+            addLog("Nöqtələr transformasiya olunur...");
+            nodes.forEach((n, i) => {
+                setTimeout(() => n.className = 'node neon-red', i * 30);
+            });
+            await new Promise(r => setTimeout(r, 2000));
+            document.getElementById('ctrl-box').innerHTML = `<button style="color:var(--red); border-color:var(--red);" onclick="startAttack()">ATACK</button>`;
+        }
+
+        function startAttack() {
+            addLog("HÜCUM BAŞLADI!");
+            document.getElementById('ctrl-box').innerHTML = `
+                <button onclick="startSignature()">İMZA AT</button>
+                <button onclick="shutdown()">SONLANDIR</button>
+            `;
+            nodes.forEach(n => {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 6 + Math.random() * 6;
+                const tx = targetPos.x + Math.cos(angle) * dist;
+                const ty = targetPos.y + Math.sin(angle) * dist;
+                n.style.left = tx + "%"; n.style.top = ty + "%";
+                
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", tx + "%"); line.setAttribute("y1", ty + "%");
+                line.setAttribute("x2", targetPos.x + "%"); line.setAttribute("y2", targetPos.y + "%");
+                line.setAttribute("class", "attack-line");
+                line.style.animation = `chaosLine ${0.4 + Math.random()}s infinite`;
+                svg.appendChild(line);
+            });
+        }
+
+        function shutdown() {
+            const screen = document.getElementById('shutdown-screen');
+            screen.style.display = "flex";
+            let c = 3;
+            const timer = setInterval(() => {
+                c--;
+                document.getElementById('count-num').innerText = c;
+                if(c <= 0) { clearInterval(timer); location.reload(); }
             }, 1000);
         }
 
-        function checkCode() {
-            const val = document.getElementById('auth-input').value;
-            if(val === correctCode) {
-                clearInterval(timerInterval);
-                document.getElementById('auth-modal').style.display = 'none';
-                showPreparation();
-            } else {
-                attempts--;
-                if(attempts < 0) window.location.href = "index.html";
-                document.getElementById('attempts-label').innerText = `Qalan haqq: ${attempts + 1}`;
-                document.getElementById('auth-input').value = "";
+        async function startSignature() {
+            addLog("İmza prosesi başladıldı...");
+            svg.innerHTML = "";
+            document.getElementById('target-ring').style.display = "none";
+            nodes.forEach(n => n.style.opacity = "0");
+
+            // Yeni 2500 nöqtənin yavaş-yavaş gəlməsi
+            for(let i=0; i<2500; i++) {
+                const n = document.createElement('div');
+                n.className = 'node neon-white';
+                n.style.left = Math.random() * 100 + "%";
+                n.style.top = Math.random() * 100 + "%";
+                map.appendChild(n);
+                nodes.push(n);
+                // Nöqtələr duman kimi yavaşca peydə olsun
+                setTimeout(() => {
+                    n.style.opacity = "1";
+                    const row = Math.floor(i / 50);
+                    const col = i % 50;
+                    n.style.left = (25 + col * 1) + "%";
+                    n.style.top = (25 + row * 1) + "%";
+                }, i * 1.5);
             }
-        }
 
-        function showPreparation() {
-            document.getElementById('prep-modal').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('prep-modal').style.display = 'none';
-                nodes.forEach(n => { n.el.classList.remove('green'); n.el.classList.add('red'); });
-                document.getElementById('final-modal').style.display = 'block';
-            }, 2000);
-        }
-
-        function executeFinalAttack() {
-            document.getElementById('final-modal').style.display = 'none';
-            attackActive = true;
-            mainBtn.innerText = "HÜCUMU DAYANDIR";
-            document.getElementById('sign-btn').style.display = 'block';
+            await new Promise(r => setTimeout(r, 6000));
+            nodes.forEach(n => { n.style.transition = "all 0.4s"; n.className = 'node neon-red'; });
             
-            const svg = document.getElementById('svg-layer');
-            svg.innerHTML = ""; 
+            await new Promise(r => setTimeout(r, 1000));
+            addLog("BAYRAQ FORMALANIR...");
 
+            // Dəqiq Bayraq Hesablaması
             nodes.forEach((n, i) => {
-                setTimeout(() => {
-                    if(!attackActive) return;
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", n.x + "%");
-                    line.setAttribute("y1", n.y + "%");
-                    line.setAttribute("x2", selectedX + "%");
-                    line.setAttribute("y2", selectedY + "%");
-                    line.setAttribute("stroke", "#ff0033");
-                    line.setAttribute("class", "attack-line");
-                    svg.appendChild(line);
-                }, i * 50);
+                const row = Math.floor(i / 50);
+                const col = i % 50;
+                const x = 25 + col * 1;
+                const y = 25 + row * 1;
+                n.style.transition = "all 2s ease-in-out";
+
+                if (row < 16) n.className = 'node neon-blue';
+                else if (row < 33) n.className = 'node neon-red';
+                else n.className = 'node neon-green';
+
+                // Ay-Ulduz
+                const dx = x - 47.5, dy = y - 41.5;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const dx2 = x - 49.2;
+                const dist2 = Math.sqrt(dx2*dx2 + dy*dy);
+                
+                const isMoon = (dist < 5.2 && dist > 4.0 && x < 50 && dist2 > 4.0);
+                
+                const ux = x - 53.5, uy = y - 41.5;
+                const uDist = Math.sqrt(ux*ux + uy*uy);
+                const angle = Math.atan2(uy, ux);
+                const star = uDist < (1.6 + Math.abs(Math.cos(angle * 4)) * 1.2);
+
+                if ((row >= 16 && row < 33) && (isMoon || star)) {
+                    n.className = 'node neon-white';
+                }
             });
-            addLog("HÜCUM İCRA OLUNUR...", "#ff0033");
         }
 
-        function stopAttack() {
-            attackActive = false;
-            targetLocked = false;
-            selectionEnabled = false;
-            document.getElementById('svg-layer').innerHTML = "";
-            mainBtn.innerText = "HƏDƏF SEÇ";
-            mainBtn.className = "btn-target";
-            document.getElementById('sign-btn').style.display = 'none';
-            document.getElementById('target-ring').style.display = 'none';
-            nodes.forEach(n => { n.el.classList.remove('red'); n.el.classList.add('green'); });
-            addLog("Sistem sıfırlandı.");
-        }
-
-        function handleSignature() {
-            attackActive = false;
-            const svg = document.getElementById('svg-layer');
-            svg.innerHTML = ""; 
-            addLog("İMZA ATILIR...", "#00ff66");
-
-            const signatureHTML = `
-                <g id="signature-layer">
-                    <path d="M 45% 40% A 30 30 0 1 0 45% 60% A 25 25 0 1 1 45% 40%" fill="none" stroke="#00ff66" stroke-width="2" />
-                    <path d="M 55% 45% L 57% 50% L 62% 50% L 58% 53% L 59% 58% L 55% 55% L 51% 58% L 52% 53% L 48% 50% L 53% 50% Z" fill="#00ff66" />
-                </g>
-            `;
-            svg.innerHTML = signatureHTML;
-
-            setTimeout(() => {
-                const sig = document.getElementById('signature-layer');
-                if(sig) sig.style.opacity = "0";
-                setTimeout(() => {
-                    stopAttack();
-                    addLog("İmza başa çatdı.");
-                }, 2000);
-            }, 15000);
-        }
-
-        function addLog(msg, color = "#00ff66") {
+        function addLog(msg) {
             const out = document.getElementById('term-out');
-            out.innerHTML += `<div style="color: ${color}">> ${msg}</div>`;
+            out.innerHTML += `<div>> ${msg}</div>`;
             out.scrollTop = out.scrollHeight;
         }
     </script>
