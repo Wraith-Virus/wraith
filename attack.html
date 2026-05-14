@@ -15,21 +15,23 @@
             z-index: 10; position: relative;
         }
 
-        /* Xəritə Sahəsi - Nöqtələrin məhdudlaşdırıldığı zonadır */
         .map-wrapper {
             position: relative; 
-            width: 80%; height: 60vh;
-            margin: 40px auto;
+            width: 96%; height: 72vh;
+            margin: 15px auto;
             border: 1px solid rgba(0, 255, 102, 0.3);
             background: url('map-az.png') no-repeat center;
             background-size: contain;
             overflow: hidden; 
-            cursor: crosshair;
+            cursor: default; /* Əvvəlcə kursor normal qalır */
             box-shadow: inset 0 0 50px #000;
         }
+        
+        /* Seçim aktiv olandan sonra kursor dəyişir */
+        .map-wrapper.selecting { cursor: crosshair; border-color: var(--red); }
+
         #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
         
-        /* Nöqtə Stili */
         .node {
             position: absolute; width: 5px; height: 5px; border-radius: 50%;
             transition: background 1s, box-shadow 1s, opacity 0.5s; z-index: 6;
@@ -37,14 +39,12 @@
         .node.green { background: var(--green); box-shadow: 0 0 10px var(--green); }
         .node.red { background: var(--red); box-shadow: 0 0 10px var(--red); }
 
-        /* Xətlərin Yumşaq Yanıb-Sönməsi (Fade Effect) */
         @keyframes softPulse {
             0%, 100% { opacity: 0.2; stroke-width: 1; }
             50% { opacity: 1; stroke-width: 1.5; }
         }
         .attack-line { animation: softPulse 3s ease-in-out infinite; }
 
-        /* Hədəf Halqası */
         #target-ring {
             position: absolute; width: 40px; height: 40px;
             border: 2px solid var(--red); border-radius: 50%;
@@ -53,7 +53,6 @@
         }
         @keyframes ringPulse { 0% { scale: 0.8; opacity: 1; } 100% { scale: 1.8; opacity: 0; } }
 
-        /* Modallar */
         .modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.98); border: 1px solid var(--green);
@@ -62,7 +61,6 @@
         }
         input { background: transparent; border: 1px solid var(--green); color: white; padding: 10px; margin: 15px 0; text-align: center; font-size: 24px; outline: none; width: 150px; }
 
-        /* Alt Panel */
         .bottom-panel {
             position: fixed; bottom: 0; width: 100%; height: 160px; 
             border-top: 1px solid var(--green); display: flex; background: #020202;
@@ -70,12 +68,12 @@
         .terminal { flex: 2; padding: 15px; font-size: 13px; overflow-y: auto; color: var(--green); border-right: 1px solid var(--green); }
         .controls { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         
-        button { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; transition: 0.3s; }
+        button { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; transition: 0.3s; font-weight: bold; }
+        .btn-target { background: #ffaa00; color: black; box-shadow: 0 0 10px #ffaa00; }
         .btn-main { background: var(--red); color: white; box-shadow: 0 0 15px var(--red); }
-        .btn-sign { background: var(--green); color: black; font-weight: bold; }
+        .btn-sign { background: var(--green); color: black; }
         button:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
 
-        /* İmza Animasiyası */
         #signature-layer { transition: opacity 2s; }
     </style>
 </head>
@@ -92,14 +90,15 @@
     </div>
 
     <div class="bottom-panel">
-        <div class="terminal" id="term-out">> Sistem hazır. Xəritədə hədəfi işarələyin...</div>
+        <div class="terminal" id="term-out">> Sistem hazır. Hücum üçün əvvəlcə hədəf seçin...</div>
         <div class="controls">
-            <button id="main-btn" class="btn-main" onclick="startProcess()" disabled>SALDIRIYI BAŞLAT</button>
+            <!-- Əsas Düymə: Statusa görə funksiyası dəyişəcək -->
+            <button id="main-btn" class="btn-target" onclick="btnController()">HƏDƏF SEÇ</button>
             <button id="sign-btn" class="btn-sign" onclick="handleSignature()" style="display:none;">İMZA AT (🇦🇿)</button>
         </div>
     </div>
 
-    <!-- Modallar eynilə qalır (Kod: 2268) -->
+    <!-- Modallar (Kod: 2268) -->
     <div id="auth-modal" class="modal">
         <h3>TƏHLÜKƏSİZLİK KODU</h3>
         <p style="color: var(--red); font-size: 25px; margin: 10px 0;" id="auth-timer">30</p>
@@ -123,17 +122,19 @@
         let attempts = 2;
         let timerInterval;
         let attackActive = false;
+        let selectionEnabled = false; // Xəritə klikləmə icazəsi
+        let targetLocked = false;    // Hədəf seçilibmi?
         const correctCode = "2268";
 
         setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
 
-        // Nöqtələrin yaradılması - Yalnız xəritə panelinin içində
         const map = document.getElementById('map');
+        const mainBtn = document.getElementById('main-btn');
         const nodes = [];
+
         for(let i=0; i<40; i++) {
             const n = document.createElement('div');
             n.className = 'node green';
-            // Koordinatları 15% - 85% aralığına sıxdım ki, kənarlara toxunmasın
             const x = Math.random() * 70 + 15;
             const y = Math.random() * 60 + 20;
             n.style.left = x + "%";
@@ -142,8 +143,31 @@
             nodes.push({el: n, x, y});
         }
 
+        // Düymənin nə edəcəyinə qərar verən idarəedici
+        function btnController() {
+            if (!selectionEnabled && !targetLocked) {
+                // Mərhələ 1: Seçimi aktiv et
+                enableSelection();
+            } else if (targetLocked && !attackActive) {
+                // Mərhələ 2: Hücum prosesini başlat
+                startProcess();
+            } else if (attackActive) {
+                // Mərhələ 3: Lazım gələrsə dayandır
+                stopAttack();
+            }
+        }
+
+        function enableSelection() {
+            selectionEnabled = true;
+            map.classList.add('selecting');
+            mainBtn.innerText = "HƏDƏF GÖZLƏNİLİR...";
+            mainBtn.disabled = true;
+            addLog("Hədəf seçim rejimi aktivdir. Xəritədə bir nöqtəyə klikləyin.");
+        }
+
         function handleMapClick(e) {
-            if(attackActive) return;
+            if (!selectionEnabled || attackActive) return;
+
             const rect = map.getBoundingClientRect();
             selectedX = ((e.clientX - rect.left) / rect.width) * 100;
             selectedY = ((e.clientY - rect.top) / rect.height) * 100;
@@ -153,12 +177,19 @@
             ring.style.left = selectedX + "%";
             ring.style.top = selectedY + "%";
 
-            document.getElementById('main-btn').disabled = false;
-            addLog(`Hədəf koordinatı: ${selectedX.toFixed(1)} / ${selectedY.toFixed(1)}`);
+            targetLocked = true;
+            selectionEnabled = false;
+            map.classList.remove('selecting');
+
+            // Düyməni hücum rejiminə keçir
+            mainBtn.disabled = false;
+            mainBtn.innerText = "SALDIRI ET";
+            mainBtn.className = "btn-main";
+            
+            addLog(`Hədəf kilidləndi: ${selectedX.toFixed(1)} / ${selectedY.toFixed(1)}`);
         }
 
         function startProcess() {
-            if(attackActive) { stopAttack(); return; }
             document.getElementById('auth-modal').style.display = 'block';
             let timeLeft = 30;
             timerInterval = setInterval(() => {
@@ -194,11 +225,11 @@
         function executeFinalAttack() {
             document.getElementById('final-modal').style.display = 'none';
             attackActive = true;
-            document.getElementById('main-btn').innerText = "HÜCUMU DAYANDIR";
+            mainBtn.innerText = "HÜCUMU DAYANDIR";
             document.getElementById('sign-btn').style.display = 'block';
             
             const svg = document.getElementById('svg-layer');
-            svg.innerHTML = ""; // Təmizlə
+            svg.innerHTML = ""; 
 
             nodes.forEach((n, i) => {
                 setTimeout(() => {
@@ -209,33 +240,32 @@
                     line.setAttribute("x2", selectedX + "%");
                     line.setAttribute("y2", selectedY + "%");
                     line.setAttribute("stroke", "#ff0033");
-                    line.setAttribute("class", "attack-line"); // Yumşaq yanıb-sönmə
+                    line.setAttribute("class", "attack-line");
                     svg.appendChild(line);
                 }, i * 50);
             });
-            addLog("HÜCUM AKTİVDİR: Paketlər ötürülür...", "#ff0033");
+            addLog("HÜCUM İCRA OLUNUR...", "#ff0033");
         }
 
         function stopAttack() {
             attackActive = false;
+            targetLocked = false;
+            selectionEnabled = false;
             document.getElementById('svg-layer').innerHTML = "";
-            document.getElementById('main-btn').innerText = "SALDIRIYI BAŞLAT";
-            document.getElementById('main-btn').disabled = true;
+            mainBtn.innerText = "HƏDƏF SEÇ";
+            mainBtn.className = "btn-target";
             document.getElementById('sign-btn').style.display = 'none';
             document.getElementById('target-ring').style.display = 'none';
-            addLog("Əməliyyat dayandırıldı.");
             nodes.forEach(n => { n.el.classList.remove('red'); n.el.classList.add('green'); });
+            addLog("Sistem sıfırlandı.");
         }
 
-        // 🇦🇿 İmza Funksiyası
         function handleSignature() {
-            // Hücumu dayandır
             attackActive = false;
             const svg = document.getElementById('svg-layer');
             svg.innerHTML = ""; 
-            addLog("HÜCUM DAYANDIRILDI. İMZA ATILIR...", "#00ff66");
+            addLog("İMZA ATILIR...", "#00ff66");
 
-            // Ay-Ulduz çəkilməsi
             const signatureHTML = `
                 <g id="signature-layer">
                     <path d="M 45% 40% A 30 30 0 1 0 45% 60% A 25 25 0 1 1 45% 40%" fill="none" stroke="#00ff66" stroke-width="2" />
@@ -244,13 +274,12 @@
             `;
             svg.innerHTML = signatureHTML;
 
-            // 15 saniyə sonra yavaş-yavaş bitsin
             setTimeout(() => {
                 const sig = document.getElementById('signature-layer');
                 if(sig) sig.style.opacity = "0";
                 setTimeout(() => {
                     stopAttack();
-                    addLog("İmza prosesi başa çatdı.");
+                    addLog("İmza başa çatdı.");
                 }, 2000);
             }, 15000);
         }
