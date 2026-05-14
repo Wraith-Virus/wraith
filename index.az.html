@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WRAITH | İdarəetmə Mərkəzi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        :root {
+            --bg-color: #050505;
+            --neon-green: #00ff66;
+            --dark-green: #003311;
+            --text-color: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--neon-green);
+            overflow: hidden; /* Ekranı sürüşdürməyi bağlayır */
+        }
+
+        /* ----- GİRİŞ EKRANI (BOOT SCREEN) ----- */
+        #boot-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 1s ease-out;
+        }
+
+        #login-form {
+            text-align: center;
+        }
+
+        #unlock-code {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--neon-green);
+            color: var(--neon-green);
+            font-size: 24px;
+            padding: 10px;
+            outline: none;
+            text-align: center;
+            text-transform: lowercase;
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        #unlock-code::placeholder {
+            color: rgba(0, 255, 102, 0.3);
+            text-shadow: none;
+        }
+
+        /* ----- ƏSAS EKRAN (DASHBOARD) ----- */
+        #main-dashboard {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            padding: 20px;
+            background: radial-gradient(circle at center, #0a110d 0%, #000000 100%);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--neon-green);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 5px;
+            text-shadow: 0 0 15px var(--neon-green);
+        }
+
+        .nav-links span {
+            margin: 0 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .nav-links span:hover { text-shadow: 0 0 10px var(--neon-green); }
+
+        /* Dil Seçimi */
+        .lang-switcher {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .lang-switcher img { width: 24px; height: auto; border-radius: 3px; }
+        .lang-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--dark-green);
+            border: 1px solid var(--neon-green);
+            margin-top: 5px;
+            padding: 5px;
+        }
+        .lang-switcher:hover .lang-dropdown { display: block; }
+        .lang-dropdown a {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--neon-green);
+            text-decoration: none;
+            padding: 5px;
+        }
+        .lang-dropdown a:hover { background: rgba(0, 255, 102, 0.2); }
+
+        /* Mərkəzi Qrid Dizaynı */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 100px);
+        }
+
+        .panel {
+            border: 1px solid var(--neon-green);
+            background: rgba(0, 51, 17, 0.2);
+            padding: 20px;
+            box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.1);
+        }
+
+        /* Xəritə və Taymer */
+        .map-section { display: flex; flex-direction: column; }
+        .map-container { flex-grow: 1; background: url('map.png') center/contain no-repeat; border-bottom: 1px solid var(--neon-green); margin-bottom: 15px; }
+        .timer-box { font-size: 48px; text-align: center; text-shadow: 0 0 20px var(--neon-green); }
+        
+        /* Terminal */
+        .terminal-panel { overflow-y: auto; font-size: 14px; }
+        .terminal-header { border-bottom: 1px solid var(--neon-green); padding-bottom: 5px; margin-bottom: 10px; }
+        #terminal-output p { margin-bottom: 5px; }
+        
+        .stats-box { margin-top: 20px; border-top: 1px dashed var(--neon-green); padding-top: 10px; text-align: center;}
+        .stats-box h1 { font-size: 36px; margin-top: 5px; }
+
+        /* Effektlər */
+        .glitch { animation: glitch 2s linear infinite; }
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GİRİŞ EKRANI -->
+    <div id="boot-screen">
+        <div id="login-form">
+            <input type="password" id="unlock-code" placeholder="SİSTEMƏ GİRİŞ KODU..." autocomplete="off">
+        </div>
+    </div>
+
+    <!-- ƏSAS EKRAN -->
+    <div id="main-dashboard">
+        <header>
+            <div class="logo glitch">WRAITH</div>
+            <div class="nav-links">
+                <span>[SİSTEM]</span>
+                <span>[ŞƏBƏKƏ]</span>
+                <span>[MODULLAR]</span>
+                <span>[GİZLİ KASSA]</span>
+            </div>
+            <div class="lang-switcher">
+                <img src="az-flag.png" alt="AZ" onerror="this.outerHTML='🇦🇿'"> AZ ▼
+                <div class="lang-dropdown">
+                    <a href="index.en.html"><img src="en-flag.png" alt="EN" onerror="this.outerHTML='🇬🇧'"> EN</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid-container">
+            <!-- Sol Tərəf: Xəritə və Taymer -->
+            <div class="panel map-section">
+                <div style="margin-bottom: 10px;">[QLOBAL YOLUXMA XƏRİTƏSİ]</div>
+                <div class="map-container"></div>
+                <div>ŞƏBƏKƏYƏ SIZMA ÜÇÜN QALAN VAXT:</div>
+                <div class="timer-box" id="countdown">00:12:45:08</div>
+            </div>
+
+            <!-- Sağ Tərəf: Terminal və Loqlar -->
+            <div class="panel terminal-panel">
+                <div class="terminal-header">TERMINAL - CANLI ƏMƏLİYYATLAR _</div>
+                <div id="terminal-output"></div>
+                
+                <div class="stats-box">
+                    <p>AKTİV YOLUXMALAR:</p>
+                    <h1 class="glitch">1,452,109</h1>
+                    <br>
+                    <p>ÜMUMİ SIZMALAR:</p>
+                    <h1>12.3K</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Şifrə Yoxlanışı
+        const bootScreen = document.getElementById('boot-screen');
+        const mainDashboard = document.getElementById('main-dashboard');
+        const unlockCode = document.getElementById('unlock-code');
+
+        unlockCode.addEventListener('keyup', function(e) {
+            if (this.value.toLowerCase() === 'wraith') {
+                bootScreen.style.opacity = '0';
+                setTimeout(() => {
+                    bootScreen.style.display = 'none';
+                    mainDashboard.style.display = 'block';
+                    startTerminal();
+                }, 1000);
+            }
+        });
+
+        // Taymer Logikası
+        let time = 45908; // Saniyə olaraq
+        setInterval(() => {
+            time--;
+            let h = Math.floor(time / 3600).toString().padStart(2, '0');
+            let m = Math.floor((time % 3600) / 60).toString().padStart(2, '0');
+            let s = Math.floor(time % 60).toString().padStart(2, '0');
+            let ms = Math.floor(Math.random() * 99).toString().padStart(2, '0');
+            document.getElementById('countdown').innerText = `${h}:${m}:${s}:${ms}`;
+        }, 1000);
+
+        // Terminal Logikası
+        const terminalMessages = [
+            "[BAŞLADILIR WRAITH-NET v1.0.4]...",
+            "[HƏDƏF: BÜTÜN SİSTEMLƏR]...",
+            "[STATUS: ŞƏBƏKƏYƏ SIZILIR]...",
+            "[MODUL: Buffer Overflow, Zero-Day Exploit]...",
+            "[BİLDİRİŞ: Frankfurt Serverlərinə keçid edildi]...",
+            "[BİLDİRİŞ: Antivirus divarı aşıldı]..."
+        ];
+        
+        function startTerminal() {
+            const output = document.getElementById('terminal-output');
+            let i = 0;
+            setInterval(() => {
+                if (i < terminalMessages.length) {
+                    output.innerHTML += `<p>${terminalMessages[i]}</p>`;
+                    i++;
+                } else {
+                    output.innerHTML += `<p style="color:red;">[SİSTEM: BAĞLANTI SABİTDİR]</p>`;
+                    i = 999; // dayandırmaq üçün
+                }
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
