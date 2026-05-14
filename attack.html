@@ -9,21 +9,20 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; }
         body { background: var(--bg); color: var(--green); overflow: hidden; height: 100vh; }
 
-        /* UI Elementləri */
         header { 
             display: flex; justify-content: space-between; padding: 15px 30px; 
             border-bottom: 1px solid var(--green); background: rgba(0,20,0,0.8);
         }
-        .vax-container { color: var(--green); font-size: 20px; }
+        #clock { font-size: 20px; color: var(--green); }
 
         /* Xəritə Sahəsi */
         .map-wrapper {
             position: relative; margin: 20px; flex-grow: 1;
             height: calc(100vh - 300px);
             border: 1px solid rgba(0, 255, 102, 0.2);
-            background: url('map.png') no-repeat center;
+            background: url('map-az.png') no-repeat center;
             background-size: contain;
-            overflow: hidden; /* Xətlər çölə çıxmasın */
+            overflow: hidden; 
             cursor: crosshair;
         }
         #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -44,15 +43,14 @@
         }
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } }
 
-        /* Popuplar */
+        /* Modallar */
         .modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.95); border: 2px solid var(--green);
             padding: 30px; z-index: 100; text-align: center; display: none;
             box-shadow: 0 0 50px rgba(0, 255, 102, 0.3);
         }
-        .modal.error { border-color: var(--red); color: var(--red); }
-        input { background: transparent; border: 1px solid var(--green); color: white; padding: 10px; margin: 10px 0; text-align: center; font-size: 18px; outline: none; }
+        input { background: transparent; border: 1px solid var(--green); color: white; padding: 10px; margin: 10px 0; text-align: center; font-size: 22px; outline: none; }
 
         /* Alt Panel */
         .bottom-panel {
@@ -62,29 +60,25 @@
         .terminal { flex: 2; padding: 15px; font-size: 13px; overflow-y: auto; color: var(--green); border-right: 1px solid var(--green); }
         .controls { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         
-        button {
-            padding: 15px 30px; font-size: 18px; cursor: pointer; border: none; font-family: 'Share Tech Mono'; transition: 0.3s;
-        }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; border: none; font-family: 'Share Tech Mono'; transition: 0.3s; }
         .btn-main { background: var(--red); color: white; box-shadow: 0 0 15px var(--red); }
         .btn-sign { background: var(--green); color: black; display: none; }
         .btn-main:disabled { background: #333; box-shadow: none; cursor: not-allowed; }
 
-        /* Strobe animasiyası (Yanıb-sönən xətlər) */
         @keyframes strobe { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
-        .strobe-line { animation: strobe 0.2s infinite; }
+        .strobe-line { animation: strobe 0.15s infinite; }
     </style>
 </head>
 <body>
 
     <header>
         <div>[ SİSTEM: AKTİV ] [ MƏNBƏ: GLOBAL ]</div>
-        <div class="vax-container" id="clock">00:00:00</div>
+        <div id="clock">00:00:00</div>
     </header>
 
     <div class="map-wrapper" id="map" onclick="handleMapClick(event)">
         <svg id="svg-layer"></svg>
         <div id="target-ring"></div>
-        <!-- Nöqtələr bura əlavə olunacaq -->
     </div>
 
     <div class="bottom-panel">
@@ -92,7 +86,6 @@
         <div class="controls">
             <button id="main-btn" class="btn-main" onclick="startProcess()" disabled>SALDIRIYI BAŞLAT</button>
             <button id="sign-btn" class="btn-sign" onclick="drawSignature()">İMZA AT (🇦🇿)</button>
-            <div id="timer-label" style="color: var(--red); font-weight: bold;"></div>
         </div>
     </div>
 
@@ -100,21 +93,21 @@
     <div id="auth-modal" class="modal">
         <h3>TƏHLÜKƏSİZLİK TƏSDİQİ</h3>
         <p>ONAY KODUNU DAXİL EDİN:</p>
-        <p style="color: var(--red); font-size: 24px;" id="auth-timer">30</p>
-        <input type="text" id="auth-input" placeholder="****" maxlength="4">
-        <p id="attempts-label">Qalan haqq: 2</p>
-        <button class="btn-main" onclick="checkCode()" style="background: var(--green); color: black;">TƏSDİQLƏ</button>
+        <p style="color: var(--red); font-size: 30px; margin: 10px 0;" id="auth-timer">30</p>
+        <input type="text" id="auth-input" placeholder="****" maxlength="4" autocomplete="off">
+        <p id="attempts-label" style="margin-bottom: 15px;">Qalan haqq: 2</p>
+        <button class="btn-main" onclick="checkCode()" style="background: var(--green); color: black; box-shadow: 0 0 10px var(--green);">TƏSDİQLƏ</button>
     </div>
 
     <!-- Hazırlanır Modalı -->
     <div id="prep-modal" class="modal">
-        <h2 style="letter-spacing: 5px;">SALDIRI HAZIRLANIR...</h2>
-        <div style="margin-top: 20px;">[||||||||||----] 80%</div>
+        <h2 style="letter-spacing: 5px; margin-bottom: 15px;">SALDIRI HAZIRLANIR...</h2>
+        <div style="font-size: 20px;">[||||||||||||||] 100%</div>
     </div>
 
-    <!-- Son Atack Modalı -->
+    <!-- Final Attack Modalı -->
     <div id="final-modal" class="modal">
-        <h1 style="color: var(--red); font-size: 50px;">ATTACK?</h1>
+        <h1 style="color: var(--red); font-size: 60px; margin-bottom: 20px;">ATTACK?</h1>
         <button class="btn-main" onclick="executeFinalAttack()">HƏ, BAŞLAT!</button>
     </div>
 
@@ -123,26 +116,23 @@
         let attempts = 2;
         let timerInterval;
         let attackActive = false;
-        const correctCode = "2026"; // Onay kodu
+        const correctCode = "2268"; // Təsdiq kodu yeniləndi
 
-        // Saat
         setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
 
-        // Yaşıl nöqtələri (adamlarımızı) yarat
         const map = document.getElementById('map');
         const nodes = [];
-        for(let i=0; i<40; i++) {
+        for(let i=0; i<45; i++) {
             const n = document.createElement('div');
             n.className = 'node green';
-            const x = Math.random() * 90 + 5;
-            const y = Math.random() * 85 + 5;
+            const x = Math.random() * 92 + 4;
+            const y = Math.random() * 88 + 4;
             n.style.left = x + "%";
             n.style.top = y + "%";
             map.appendChild(n);
             nodes.push({el: n, x, y});
         }
 
-        // 1. Xəritədə yer seçmək
         function handleMapClick(e) {
             if(attackActive) return;
             const rect = map.getBoundingClientRect();
@@ -155,13 +145,11 @@
             ring.style.top = selectedY + "%";
 
             document.getElementById('main-btn').disabled = false;
-            addLog(`Hədəf seçildi: ${selectedX.toFixed(2)} / ${selectedY.toFixed(2)}`);
+            addLog(`Koordinat kilidləndi: ${selectedX.toFixed(1)} / ${selectedY.toFixed(1)}`);
         }
 
-        // 2. Saldırıyı Başlat basanda onay kodu
         function startProcess() {
             if(attackActive) { stopAttack(); return; }
-            
             document.getElementById('auth-modal').style.display = 'block';
             let timeLeft = 30;
             timerInterval = setInterval(() => {
@@ -182,24 +170,22 @@
                 if(attempts < 0) window.location.href = "index.html";
                 document.getElementById('attempts-label').innerText = `Qalan haqq: ${attempts + 1}`;
                 document.getElementById('auth-input').value = "";
+                addLog("XƏTA: Yanlış onay kodu!", "#ff0033");
             }
         }
 
-        // 3. Hazırlanır Popupu
         function showPreparation() {
             document.getElementById('prep-modal').style.display = 'block';
             setTimeout(() => {
                 document.getElementById('prep-modal').style.display = 'none';
-                // Nöqtələri qırmızı elə
                 nodes.forEach(n => {
                     n.el.classList.remove('green');
                     n.el.classList.add('red');
                 });
                 document.getElementById('final-modal').style.display = 'block';
-            }, 3000);
+            }, 2500);
         }
 
-        // 4. Əsas Hücum (Xətlərin yanması)
         function executeFinalAttack() {
             document.getElementById('final-modal').style.display = 'none';
             attackActive = true;
@@ -216,12 +202,12 @@
                     line.setAttribute("x2", selectedX + "%");
                     line.setAttribute("y2", selectedY + "%");
                     line.setAttribute("stroke", "#ff0033");
-                    line.setAttribute("stroke-width", "1");
+                    line.setAttribute("stroke-width", "1.2");
                     line.classList.add('strobe-line');
                     svg.appendChild(line);
-                }, i * 50);
+                }, i * 40);
             });
-            addLog("KRİTİK: Hücum dalğası göndərilir...", "#ff0033");
+            addLog("HÜCUM DALĞASI AKTİVDİR: Paketlər göndərilir...", "#ff0033");
         }
 
         function stopAttack() {
@@ -230,30 +216,24 @@
             document.getElementById('main-btn').innerText = "SALDIRIYI BAŞLAT";
             document.getElementById('main-btn').disabled = true;
             document.getElementById('target-ring').style.display = 'none';
-            addLog("Hücum dayandırıldı. Enerji azaldılır.");
-            
-            // Nöqtələri yavaşca yaşıl elə
+            document.getElementById('sign-btn').style.display = 'none';
+            addLog("Sistem soyudulur. Əməliyyat dayandırıldı.");
             nodes.forEach(n => {
                 n.el.classList.remove('red');
                 n.el.classList.add('green');
             });
         }
 
-        // 5. İmza At (Ay Ulduz)
         function drawSignature() {
             const svg = document.getElementById('svg-layer');
-            svg.innerHTML = ""; // Köhnə xətləri sil
+            svg.innerHTML = "";
+            addLog("İMZA PROSESİ: 🇦🇿 AY-ULDUZ FORMALASDIRILIR...", "#00ff66");
             
-            // Ay-Ulduz koordinatları (Xəritənin mərkəzinə yaxın)
-            addLog("SİSTEM İMZASI ATILIR: AY-ULDUZ...", "#00ff66");
-            
-            const centerX = 50, centerY = 40;
-            // Ay və Ulduz üçün xüsusi SVG elementləri bura yazıla bilər, 
-            // lakin biz "xətlərlə çəkilmiş" effekt veririk.
+            // Xətlərlə Ay-Ulduz effekti
             const signatureHTML = `
-                <circle cx="45%" cy="40%" r="40" stroke="#00ff66" fill="none" stroke-width="2" />
-                <circle cx="48%" cy="40%" r="35" stroke="black" fill="black" />
-                <path d="M 52% 35% L 54% 40% L 59% 40% L 55% 43% L 56% 48% L 52% 45% L 48% 48% L 49% 43% L 45% 40% L 50% 40% Z" fill="#00ff66" />
+                <circle cx="50%" cy="45%" r="50" stroke="#00ff66" fill="none" stroke-width="2" stroke-dasharray="10,5" />
+                <circle cx="53%" cy="45%" r="45" stroke="black" fill="black" />
+                <path d="M 55% 40% L 57% 45% L 62% 45% L 58% 48% L 59% 53% L 55% 50% L 51% 53% L 52% 48% L 48% 45% L 53% 45% Z" fill="#00ff66" class="strobe-line" />
             `;
             svg.innerHTML = signatureHTML;
         }
