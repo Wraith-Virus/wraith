@@ -2,269 +2,243 @@
 <html lang="az">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WRAITH | İdarəetmə Mərkəzi</title>
+    <title>WRAITH | SİSTEM_HACK_v2.7.1</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
         
         :root {
-            --bg-color: #050505;
             --neon-green: #00ff66;
-            --dark-green: #003311;
-            --text-color: #e0e0e0;
+            --bg-dark: #000a05;
+            --panel-bg: rgba(0, 20, 10, 0.7);
+            --red-alert: #ff0000;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Share Tech Mono', monospace;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--neon-green);
-            overflow: hidden; /* Ekranı sürüşdürməyi bağlayır */
-        }
-
-        /* ----- GİRİŞ EKRANI (BOOT SCREEN) ----- */
-        #boot-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
             background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 1s ease-out;
-        }
-
-        #login-form {
-            text-align: center;
-        }
-
-        #unlock-code {
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid var(--neon-green);
             color: var(--neon-green);
-            font-size: 24px;
-            padding: 10px;
-            outline: none;
-            text-align: center;
-            text-transform: lowercase;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #05150a 0%, #000 100%);
+        }
+
+        /* ----- GİRİŞ EKRANI ----- */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; justify-content: center; align-items: center;
+            z-index: 1000; transition: 1s;
+        }
+        #boot-screen input {
+            background: transparent; border: none; border-bottom: 2px solid var(--neon-green);
+            color: var(--neon-green); font-size: 24px; text-align: center; outline: none;
             text-shadow: 0 0 10px var(--neon-green);
         }
 
-        #unlock-code::placeholder {
-            color: rgba(0, 255, 102, 0.3);
-            text-shadow: none;
-        }
-
-        /* ----- ƏSAS EKRAN (DASHBOARD) ----- */
-        #main-dashboard {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-            padding: 20px;
-            background: radial-gradient(circle at center, #0a110d 0%, #000000 100%);
-        }
+        /* ----- ƏSAS PANEL ----- */
+        #main-ui { display: none; padding: 10px; height: 100vh; grid-template-rows: 50px 1fr 40px; display: none; }
 
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--neon-green);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--neon-green); padding: 0 20px;
         }
 
-        .logo {
-            font-size: 36px;
-            font-weight: bold;
-            letter-spacing: 5px;
-            text-shadow: 0 0 15px var(--neon-green);
-        }
+        .lang-btn { cursor: pointer; border: 1px solid var(--neon-green); padding: 2px 5px; font-size: 12px; }
 
-        .nav-links span {
-            margin: 0 15px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .nav-links span:hover { text-shadow: 0 0 10px var(--neon-green); }
-
-        /* Dil Seçimi */
-        .lang-switcher {
-            position: relative;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .lang-switcher img { width: 24px; height: auto; border-radius: 3px; }
-        .lang-dropdown {
-            display: none;
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--dark-green);
-            border: 1px solid var(--neon-green);
-            margin-top: 5px;
-            padding: 5px;
-        }
-        .lang-switcher:hover .lang-dropdown { display: block; }
-        .lang-dropdown a {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            color: var(--neon-green);
-            text-decoration: none;
-            padding: 5px;
-        }
-        .lang-dropdown a:hover { background: rgba(0, 255, 102, 0.2); }
-
-        /* Mərkəzi Qrid Dizaynı */
-        .grid-container {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            height: calc(100vh - 100px);
+        /* GRID LAYOUT */
+        .dashboard {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 10px; padding: 10px; height: 85vh;
         }
 
         .panel {
-            border: 1px solid var(--neon-green);
-            background: rgba(0, 51, 17, 0.2);
-            padding: 20px;
-            box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.1);
+            border: 1px solid rgba(0, 255, 102, 0.3); background: var(--panel-bg);
+            padding: 10px; position: relative; overflow: hidden;
         }
 
-        /* Xəritə və Taymer */
-        .map-section { display: flex; flex-direction: column; }
-        .map-container { flex-grow: 1; background: url('map-az.png') center/contain no-repeat; border-bottom: 1px solid var(--neon-green); margin-bottom: 15px; }
-        .timer-box { font-size: 48px; text-align: center; text-shadow: 0 0 20px var(--neon-green); }
-        
-        /* Terminal */
-        .terminal-panel { overflow-y: auto; font-size: 14px; }
-        .terminal-header { border-bottom: 1px solid var(--neon-green); padding-bottom: 5px; margin-bottom: 10px; }
-        #terminal-output p { margin-bottom: 5px; }
-        
-        .stats-box { margin-top: 20px; border-top: 1px dashed var(--neon-green); padding-top: 10px; text-align: center;}
-        .stats-box h1 { font-size: 36px; margin-top: 5px; }
-
-        /* Effektlər */
-        .glitch { animation: glitch 2s linear infinite; }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
+        /* MAP AREA */
+        #map-area {
+            background: url('map.png') center/contain no-repeat;
+            position: relative;
         }
+
+        .red-dot {
+            position: absolute; width: 4px; height: 4px; background: var(--red-alert);
+            border-radius: 50%; box-shadow: 0 0 8px var(--red-alert);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* ATTACK ANIMATION AREA */
+        #attack-target {
+            position: absolute; border: 2px solid var(--red-alert);
+            border-radius: 50%; width: 40px; height: 40px;
+            top: 42%; left: 63%; /* Ermənistan təxmini koordinat */
+            display: none; transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px var(--red-alert);
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+
+        /* CLOCK & LABELS */
+        .vaxt-box { position: absolute; top: 10px; right: 20px; font-size: 18px; color: var(--neon-green); }
+
+        /* TERMINAL */
+        #terminal { font-size: 12px; line-height: 1.4; overflow-y: auto; height: 300px; }
+
+        /* BUTTONS */
+        .btn-attack {
+            background: var(--red-alert); color: #fff; border: none;
+            padding: 10px 20px; cursor: pointer; font-weight: bold;
+            margin-top: 20px; box-shadow: 0 0 10px var(--red-alert);
+        }
+
+        /* MODAL */
+        #modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #000; border: 2px solid var(--neon-green);
+            padding: 30px; display: none; z-index: 2000; text-align: center;
+        }
+
+        /* BOTTOM BAR */
+        .bottom-bar {
+            display: flex; justify-content: center; align-items: center;
+            border-top: 1px solid var(--neon-green); color: var(--neon-green);
+        }
+
+        #timer { font-size: 32px; margin-left: 20px; text-shadow: 0 0 10px var(--neon-green); }
     </style>
 </head>
 <body>
 
-    <!-- GİRİŞ EKRANI -->
     <div id="boot-screen">
-        <div id="login-form">
-            <input type="password" id="unlock-code" placeholder="SİSTEMƏ GİRİŞ KODU..." autocomplete="off">
+        <input type="password" id="pass" placeholder="KODU DAXİL EDİN..." autocomplete="off">
+    </div>
+
+    <div id="main-ui">
+        <header>
+            <div style="letter-spacing: 5px; font-weight: bold;">WRAITH</div>
+            <div>[SİSTEM] [ŞƏBƏKƏ] [MODULLAR] [GİZLİ KASSA]</div>
+            <div class="lang-btn" onclick="location.href='index.en.html'">🇦🇿 AZ ▼</div>
+        </header>
+
+        <div class="dashboard">
+            <div class="panel" id="map-area">
+                <div style="font-size: 12px;">[QLOBAL YOLUXMA XƏRİTƏSİ]</div>
+                <div class="vaxt-box">VAXT: <span id="live-clock">00:00:00</span></div>
+                
+                <div id="attack-target"></div>
+                <div id="dots-container"></div>
+            </div>
+
+            <div class="panel">
+                <div style="border-bottom: 1px solid var(--neon-green); padding-bottom: 5px;">TERMINAL - CANLI ƏMƏLİYYATLAR</div>
+                <div id="terminal"></div>
+                <div style="margin-top: 20px;">
+                    <p>AKTİV YOLUXMALAR: 1,452,109</p>
+                    <p>ÜMUMİ SIZMALAR: 12.3K</p>
+                    <button class="btn-attack" onclick="openAttack()">HÜCUMA BAŞLA (ATTACK)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            ŞƏBƏKƏYƏ SIZMA ÜÇÜN QALAN VAXT: <span id="timer">00:00:00</span>
         </div>
     </div>
 
-    <!-- ƏSAS EKRAN -->
-    <div id="main-dashboard">
-        <header>
-            <div class="logo glitch">WRAITH</div>
-            <div class="nav-links">
-                <span>[SİSTEM]</span>
-                <span>[ŞƏBƏKƏ]</span>
-                <span>[MODULLAR]</span>
-                <span>[GİZLİ KASSA]</span>
-            </div>
-            <div class="lang-switcher">
-                <img src="az-flag.png" alt="AZ" onerror="this.outerHTML='🇦🇿'"> AZ ▼
-                <div class="lang-dropdown">
-                    <a href="index.en.html"><img src="en-flag.png" alt="EN" onerror="this.outerHTML='🇬🇧'"> EN</a>
-                </div>
-            </div>
-        </header>
-
-        <div class="grid-container">
-            <!-- Sol Tərəf: Xəritə və Taymer -->
-            <div class="panel map-section">
-                <div style="margin-bottom: 10px;">[QLOBAL YOLUXMA XƏRİTƏSİ]</div>
-                <div class="map-container"></div>
-                <div>ŞƏBƏKƏYƏ SIZMA ÜÇÜN QALAN VAXT:</div>
-                <div class="timer-box" id="countdown">00:12:45:08</div>
-            </div>
-
-            <!-- Sağ Tərəf: Terminal və Loqlar -->
-            <div class="panel terminal-panel">
-                <div class="terminal-header">TERMINAL - CANLI ƏMƏLİYYATLAR _</div>
-                <div id="terminal-output"></div>
-                
-                <div class="stats-box">
-                    <p>AKTİV YOLUXMALAR:</p>
-                    <h1 class="glitch">1,452,109</h1>
-                    <br>
-                    <p>ÜMUMİ SIZMALAR:</p>
-                    <h1>12.3K</h1>
-                </div>
-            </div>
+    <!-- Attack Modal -->
+    <div id="modal">
+        <div id="modal-content">
+            <p>HƏDƏF ÖLKƏNİ YAZIN:</p>
+            <input type="text" id="target-country" style="background:transparent; border:1px solid var(--neon-green); color:white; margin:10px;"><br>
+            <button onclick="confirmCountry()" style="background:var(--neon-green); border:none; padding:5px 10px; cursor:pointer;">TƏSDİQLƏ</button>
         </div>
     </div>
 
     <script>
-        // Şifrə Yoxlanışı
-        const bootScreen = document.getElementById('boot-screen');
-        const mainDashboard = document.getElementById('main-dashboard');
-        const unlockCode = document.getElementById('unlock-code');
-
-        unlockCode.addEventListener('keyup', function(e) {
-            if (this.value.toLowerCase() === 'wraith') {
-                bootScreen.style.opacity = '0';
-                setTimeout(() => {
-                    bootScreen.style.display = 'none';
-                    mainDashboard.style.display = 'block';
-                    startTerminal();
-                }, 1000);
+        // 1. Giriş
+        const passInput = document.getElementById('pass');
+        passInput.addEventListener('keyup', (e) => {
+            if(passInput.value.toLowerCase() === 'wraith') {
+                document.getElementById('boot-screen').style.display = 'none';
+                document.getElementById('main-ui').style.display = 'grid';
+                startTerminal();
+                generateDots();
             }
         });
 
-        // Taymer Logikası
-        let time = 45908; // Saniyə olaraq
+        // 2. Canlı Saat (Azərbaycan vaxtı)
         setInterval(() => {
-            time--;
-            let h = Math.floor(time / 3600).toString().padStart(2, '0');
-            let m = Math.floor((time % 3600) / 60).toString().padStart(2, '0');
-            let s = Math.floor(time % 60).toString().padStart(2, '0');
-            let ms = Math.floor(Math.random() * 99).toString().padStart(2, '0');
-            document.getElementById('countdown').innerText = `${h}:${m}:${s}:${ms}`;
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.toLocaleTimeString('az-AZ');
         }, 1000);
 
-        // Terminal Logikası
-        const terminalMessages = [
-            "[BAŞLADILIR WRAITH-NET v1.0.4]...",
-            "[HƏDƏF: BÜTÜN SİSTEMLƏR]...",
-            "[STATUS: ŞƏBƏKƏYƏ SIZILIR]...",
-            "[MODUL: Buffer Overflow, Zero-Day Exploit]...",
-            "[BİLDİRİŞ: Frankfurt Serverlərinə keçid edildi]...",
-            "[BİLDİRİŞ: Antivirus divarı aşıldı]..."
-        ];
-        
+        // 3. Xəritədə Qırmızı Nöqtələr
+        function generateDots() {
+            const container = document.getElementById('dots-container');
+            for(let i=0; i<15; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'red-dot';
+                dot.style.top = Math.random() * 80 + 10 + '%';
+                dot.style.left = Math.random() * 80 + 10 + '%';
+                container.appendChild(dot);
+            }
+        }
+
+        // 4. Hücum Sistemi
+        function openAttack() {
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function confirmCountry() {
+            const country = document.getElementById('target-country').value;
+            if(country) {
+                document.getElementById('modal-content').innerHTML = `
+                    <p>TƏHLÜKƏSİZLİK KODUNU DAXİL EDİN:</p>
+                    <input type="text" id="auth-code" style="background:transparent; border:1px solid var(--neon-green); color:white; margin:10px;"><br>
+                    <button onclick="finalAttack()" style="background:var(--red-alert); border:none; padding:5px 10px; color:white; cursor:pointer;">HÜCUMU TƏSDİQLƏ</button>
+                `;
+            }
+        }
+
+        function finalAttack() {
+            const code = document.getElementById('auth-code').value;
+            if(code === '2268') {
+                document.getElementById('modal').style.display = 'none';
+                document.getElementById('attack-target').style.display = 'block';
+                startCountdown();
+                addTerminalLog("[KRİTİK] Hücum başladıldı: Hədəf Ermənistan...");
+                addTerminalLog("[SİSTEM] Serverlər yüklənir...");
+            } else {
+                alert("YALNIŞ KOD!");
+            }
+        }
+
+        // 5. Geri Sayım (5 dəqiqə)
+        function startCountdown() {
+            let time = 300; 
+            const timerDisplay = document.getElementById('timer');
+            const interval = setInterval(() => {
+                let m = Math.floor(time / 60).toString().padStart(2, '0');
+                let s = (time % 60).toString().padStart(2, '0');
+                timerDisplay.innerText = `00:${m}:${s}`;
+                if(time === 0) clearInterval(interval);
+                time--;
+            }, 1000);
+        }
+
+        function addTerminalLog(msg) {
+            const term = document.getElementById('terminal');
+            term.innerHTML += `<p style="color:var(--neon-green)">${msg}</p>`;
+            term.scrollTop = term.scrollHeight;
+        }
+
         function startTerminal() {
-            const output = document.getElementById('terminal-output');
-            let i = 0;
             setInterval(() => {
-                if (i < terminalMessages.length) {
-                    output.innerHTML += `<p>${terminalMessages[i]}</p>`;
-                    i++;
-                } else {
-                    output.innerHTML += `<p style="color:red;">[SİSTEM: BAĞLANTI SABİTDİR]</p>`;
-                    i = 999; // dayandırmaq üçün
-                }
-            }, 1500);
+                const logs = ["[BAĞLANTI SABİTDİR]", "[MƏLUMAT AXINI: 124kb/s]", "[PROXY AKTİVDİR]", "[SIZMA DAVAM EDİR]"];
+                addTerminalLog(logs[Math.floor(Math.random()*logs.length)]);
+            }, 3000);
         }
     </script>
 </body>
